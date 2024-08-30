@@ -6,6 +6,8 @@ from user_profile.views import (ProfileView,
                                 UploadPhotoView, RequestPasswordResetEmail
                                 )
 
+from task.views import TaskCategoryListView, TaskListView
+
 app_name = 'api'
 
 
@@ -20,4 +22,11 @@ urlpatterns = [
      path('password-reset-confirm/<uidb64>/<token>/',
          auth_views.PasswordResetConfirmView.as_view(),
          name='password-reset-confirm'),   
+
+     path('task/category/list',
+         TaskCategoryListView.as_view(),
+         name='task-category-list'),  
+     path('task/list',
+         TaskListView.as_view(),
+         name='task-list'),   
 ]

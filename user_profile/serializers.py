@@ -42,7 +42,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'email', 'first_name', 'last_name',
             'password', 'confirm_password', 'birthdate', 
-            'gender',
+            'gender', 'contact_number', 'address',
         ]
 
         extra_kwargs = {

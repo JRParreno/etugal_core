@@ -39,15 +39,16 @@ class TokenViewWithUserId(TokenView):
                         "lastName": token.user.last_name,
                         "email": token.user.email,
                         "contactNumber": profile.contact_number,
-                        "birthdate": profile.birthdate,
+                        "birthdate": str(profile.birthdate),
                         "profilePhoto": request.build_absolute_uri(profile.profile_photo.url) if profile.profile_photo else None,
                         "address": profile.address,
                         "gender": profile.gender,
                         "verificationStatus": profile.verification_status,
-                        "verificationRemarks": profile.verificationRemarks,
+                        "verificationRemarks": profile.verification_remarks,
                         "access_token": access_token,
                         "refresh_token": body.get("refresh_token")
                     }
+                    
                     body = json.dumps(data)
                     
                 except ObjectDoesNotExist:

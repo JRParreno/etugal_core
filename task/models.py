@@ -2,6 +2,7 @@ from django.db import models
 
 from core.base_models import BaseModel
 from user_profile.models import UserProfile
+from django_admin_geomap import GeoItem
 
 class TaskCategory(BaseModel):
     title = models.CharField(max_length=25, unique=True)
@@ -14,7 +15,7 @@ class TaskCategory(BaseModel):
         return self.title
 
 
-class Task(BaseModel):
+class Task(BaseModel, GeoItem):
     IN_PERSON = 'IN_PERSON'
     ONLINE = 'ONLINE'
 
@@ -23,8 +24,8 @@ class Task(BaseModel):
         (ONLINE, 'Online'),
     ]
     
-    PENDING = 'IN_PERSON'
-    IN_PROGRESS = 'ONLINE'
+    PENDING = 'PENDING'
+    IN_PROGRESS = 'IN_PROGRESS'
     ACCEPTED = 'ACCEPTED'
     COMPLETED = 'COMPLETED'
     CANCELLED = 'CANCELLED'
@@ -51,11 +52,31 @@ class Task(BaseModel):
     longitude = models.FloatField()
     latitude = models.FloatField()
     status = models.CharField(
-        max_length=10, choices=STATUSES, default=PENDING, verbose_name="Task Status")
+        max_length=15, choices=STATUSES, default=PENDING, verbose_name="Task Status")
     rejection_reason = models.TextField(blank=True, null=True)
     
-    
+    @property
+    def geomap_longitude(self):
+        return '' if self.longitude is None else str(self.longitude)
+
+    @property
+    def geomap_latitude(self):
+        return '' if self.latitude is None else str(self.latitude)
+
+    @property
+    def geomap_popup_view(self):
+        return "<strong>{}</strong>".format(str(self))
+
+    @property
+    def geomap_popup_edit(self):
+        return self.geomap_popup_view
+
+    @property
+    def geomap_popup_common(self):
+        return self.geomap_popup_view
+
     class Meta:
+        managed = True
         verbose_name = "Task"
         verbose_name_plural = "Tasks"
     

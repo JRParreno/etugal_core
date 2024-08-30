@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Task, TaskCategory, TaskApplicant, TaskReview
+from django_admin_geomap import ModelAdmin
 
 
 @admin.register(TaskCategory)
@@ -9,12 +10,18 @@ class TaskCategoryAdmin(admin.ModelAdmin):
     search_fields = ('title',)
     
 
-@admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
+class TaskAdmin(ModelAdmin):
+    geomap_field_longitude = "id_longitude"
+    geomap_field_latitude = "id_latitude"
+    geomap_item_zoom = "15"
+    geomap_show_map_on_list = False
     list_display = ('id', 'title', 'task_category', 'provider', 'performer', 'work_type', 'status',)
     ordering = ('title', 'created_at',)
     search_fields = ('title',)
     list_filter = ('work_type', 'status',)
+
+
+admin.site.register(Task, TaskAdmin)
 
 
 @admin.register(TaskApplicant)
