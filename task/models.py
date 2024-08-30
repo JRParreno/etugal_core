@@ -1,0 +1,93 @@
+from django.db import models
+
+from core.base_models import BaseModel
+from user_profile.models import UserProfile
+
+class TaskCategory(BaseModel):
+    title = models.CharField(max_length=25, unique=True)
+    
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+    
+    def __str__(self):
+        return self.title
+
+
+class Task(BaseModel):
+    IN_PERSON = 'IN_PERSON'
+    ONLINE = 'ONLINE'
+
+    WORK_TYPE = [
+        (IN_PERSON, 'In Person'),
+        (ONLINE, 'Online'),
+    ]
+    
+    PENDING = 'IN_PERSON'
+    IN_PROGRESS = 'ONLINE'
+    ACCEPTED = 'ACCEPTED'
+    COMPLETED = 'COMPLETED'
+    CANCELLED = 'CANCELLED'
+    REJECTED = 'REJECTED'
+
+    STATUSES = [
+        (PENDING, 'Pending'),
+        (IN_PROGRESS, 'In Progress'),
+        (ACCEPTED, 'Accepted'),
+        (COMPLETED, 'Completed'),
+        (CANCELLED, 'Cancelled'),
+        (REJECTED, 'Rejected'),
+    ]
+    
+    title = models.CharField(max_length=25)
+    task_category = models.ForeignKey(TaskCategory, on_delete=models.CASCADE)
+    provider = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='task_provider')
+    performer = models.ForeignKey(UserProfile, null=True, blank=True, on_delete=models.CASCADE, related_name='task_performer')
+    description = models.TextField()
+    work_type = models.CharField(
+        max_length=10, choices=WORK_TYPE, default=ONLINE, verbose_name="Work Type")
+    reward = models.FloatField(default=0.0)
+    address = models.CharField(max_length=150)
+    longitude = models.FloatField()
+    latitude = models.FloatField()
+    status = models.CharField(
+        max_length=10, choices=STATUSES, default=PENDING, verbose_name="Task Status")
+    rejection_reason = models.TextField(blank=True, null=True)
+    
+    
+    class Meta:
+        verbose_name = "Task"
+        verbose_name_plural = "Tasks"
+    
+    def __str__(self):
+        return f"{self.title} - {self.status}"
+
+
+class TaskApplicant(BaseModel):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_applicant')
+    performer = models.ForeignKey(UserProfile, null=True, blank=True, on_delete=models.CASCADE, related_name='task_applicant_performer')
+    description = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['task', 'performer',]
+        verbose_name = "Applicant"
+        verbose_name_plural = "Applicants"
+    
+    def __str__(self):
+        return f"{self.task.title} - {self.performer.user.get_full_name}"
+
+
+class TaskReview(BaseModel):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_review')
+    provider_rate = models.IntegerField(default=0, choices=((i,i) for i in range(1, 6)))
+    provider_feedback = models.TextField(null=True, blank=True)
+    performer_rate = models.IntegerField(default=0, choices=((i,i) for i in range(1, 6)))
+    performer_feedback = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "Review"
+        verbose_name_plural = "Review"
+    
+    def __str__(self):
+        return self.task.title
+    
