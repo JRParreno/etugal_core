@@ -11,7 +11,7 @@ class TaskCategoryListView(generics.ListAPIView):
     pagination_class = ExtraSmallResultsSetPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['title',]
-
+    
 
 class TaskListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated,]
@@ -20,3 +20,11 @@ class TaskListView(generics.ListAPIView):
     pagination_class = ExtraSmallResultsSetPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['title',]
+    
+    def get_queryset(self):
+        task_category_id = self.request.GET.get('task_category', None)
+        
+        if task_category_id:
+            return super().get_queryset().filter(task_category=task_category_id)
+        
+        return super().get_queryset()
