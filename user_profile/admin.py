@@ -6,7 +6,7 @@ from etugal_core import settings
 
 @admin.register(UserProfile)
 class UserProfileAdminView(admin.ModelAdmin):
-    list_display = ('id', 'user',)
+    list_display = ('id', 'user', 'verification_status',)
     ordering = ('user',)
     search_fields = ('user__first_name', 'user__last_name',)
     list_filter = ('verification_status',)

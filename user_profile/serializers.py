@@ -144,10 +144,14 @@ class ProfileSerializer(serializers.Serializer):
 
 
 class UploadPhotoSerializer(serializers.ModelSerializer):
+    profile_photo = serializers.ImageField(required=False, allow_null=True)
+    id_photo = serializers.ImageField(required=False, allow_null=True)  
+    face_photo = serializers.ImageField(required=False, allow_null=True)
+
 
     class Meta:
         model = UserProfile
-        fields = ['profile_photo',]
+        fields = ['profile_photo', 'id_photo', 'face_photo',]
 
     def __init__(self, *args, **kwargs):
         # init context and request
@@ -156,6 +160,23 @@ class UploadPhotoSerializer(serializers.ModelSerializer):
         self.kwargs = context.get("kwargs", None)
 
         super(UploadPhotoSerializer, self).__init__(*args, **kwargs)
+    
+    def update(self, instance, validated_data):
+        # Custom logic to update specific fields
+
+        if 'profile_photo' in validated_data:
+            instance.profile_photo = validated_data.get('profile_photo', instance.profile_photo)
+
+        if 'id_photo' in validated_data:
+            instance.id_photo = validated_data.get('id_photo', instance.id_photo)
+        
+        if 'face_photo' in validated_data:
+            instance.face_photo = validated_data.get('face_photo', instance.face_photo)
+            instance.verification_status = UserProfile.PROCESSING_APPLICATION
+
+        # Add any other custom logic here if needed
+        instance.save()
+        return instance
 
 
 class ResetPasswordEmailRequestSerializer(serializers.Serializer):

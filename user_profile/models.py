@@ -19,13 +19,14 @@ class UserProfile(models.Model):
     SUBMITTED = 'SUBMITTED'
     PROCESSING_APPLICATION = 'PROCESSING_APPLICATION'
     VERIFIED = 'VERIFIED'
+    UNVERIFIED = 'UNVERIFIED'
     REJECTED = 'REJECTED'
     
     VERIFICATION_CHOICES = [
         (PROCESSING_APPLICATION, 'PROCESSING APPLICATION'),
         (VERIFIED, 'VERIFIED'),
         (REJECTED, 'REJECTED'),
-        (NA, 'N/A'),
+        (UNVERIFIED, 'UNVERIFIED'),
     ]
 
     user = models.OneToOneField(
@@ -38,7 +39,7 @@ class UserProfile(models.Model):
     profile_photo = models.ImageField(
         upload_to='images/profiles/', blank=True, null=True)
     verification_status = models.CharField(
-        max_length=100, choices=VERIFICATION_CHOICES, default=NA, null=False, blank=False,)
+        max_length=100, choices=VERIFICATION_CHOICES, default=UNVERIFIED, null=False, blank=False,)
     verification_remarks = models.TextField(null=True, blank=True)
     id_photo = models.ImageField(
         upload_to='images/ids/', blank=True, null=True)
