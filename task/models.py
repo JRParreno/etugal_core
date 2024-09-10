@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 
 from core.base_models import BaseModel
 from user_profile.models import UserProfile
@@ -53,6 +54,7 @@ class Task(BaseModel, GeoItem):
     latitude = models.FloatField()
     done_date = models.DateField(null=True, blank=False)
     schedule_time = models.TimeField(null=True, blank=False)
+    is_done_perform = models.BooleanField(default=False)
     status = models.CharField(
         max_length=15, choices=STATUSES, default=PENDING, verbose_name="Task Status")
     rejection_reason = models.TextField(blank=True, null=True)
@@ -84,6 +86,16 @@ class Task(BaseModel, GeoItem):
     
     def __str__(self):
         return f"{self.title} - {self.status}"
+    
+    def clean(self):
+        # Ensure that is_done_perform is True before marking the task as completed
+        if self.status == self.COMPLETED and not self.is_done_perform:
+            raise ValidationError("The task cannot be marked as completed unless 'is_done_perform' is True.")
+    
+    def save(self, *args, **kwargs):
+        # Call the clean method to perform validation
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class TaskApplicant(BaseModel):

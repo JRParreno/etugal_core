@@ -1,8 +1,10 @@
-from rest_framework import generics, permissions, response, status, filters, viewsets
+from rest_framework import generics, permissions, response, filters, viewsets, status
 
 from core.paginate import ExtraSmallResultsSetPagination
+from user_profile.models import UserProfile
 from .models import TaskCategory, Task
 from .serializers import TaskCategorySerializers, TaskListSerializers, TaskSerializer
+from rest_framework.decorators import action
 
 class TaskCategoryListView(generics.ListAPIView):
     serializer_class = TaskCategorySerializers
@@ -23,11 +25,11 @@ class TaskListView(generics.ListAPIView):
     
     def get_queryset(self):
         task_category_id = self.request.GET.get('task_category', None)
-        
+        queryset = super().get_queryset().filter(performer=None, status=Task.PENDING).exclude(provider=self.request.user.profile)
         if task_category_id:
-            return super().get_queryset().filter(task_category=task_category_id)
+            return queryset.filter(task_category=task_category_id)
         
-        return super().get_queryset()
+        return queryset
     
 
 
@@ -37,11 +39,45 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(provider=self.request.user.profile)
         status = self.request.query_params.get('status', None)
         if status:
-            queryset = queryset.filter(status=status, provider=self.request.user.profile)
+            queryset = queryset.filter(status=status)
         return queryset
 
     def perform_create(self, serializer):
         serializer.save(provider=self.request.user)
+    
+    @action(detail=True, methods=['patch'])
+    def patch_performer(self, request, pk=None):
+        task = self.get_object()
+        performer_id = request.data.get('performer')
+
+        # Validate that the performer exists
+        if performer_id:
+            try:
+                performer = UserProfile.objects.get(pk=performer_id)
+                task.performer = performer
+                task.status = Task.IN_PROGRESS
+                task.save()
+                serializer = TaskSerializer(task)
+                return response.Response(serializer.data, status=status.HTTP_200_OK)
+            except UserProfile.DoesNotExist:
+                return response.Response({"error": "Performer does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return response.Response({"error": "Performer ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['patch'])
+    def patch_status(self, request, pk=None):
+        task = self.get_object()
+        new_status = request.data.get('status')
+        
+        # Ensure the new status is valid
+        if new_status in dict(Task.STATUSES).keys():
+            serializer = TaskSerializer(task, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return response.Response(serializer.data)
+            return response.Response(serializer.errors, status=400)
+        else:
+            return response.Response({"error": f"Invalid status. Allowed statuses: {list(dict(Task.STATUSES).keys())}"}, status=400)
