@@ -19,10 +19,23 @@ class TaskProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TaskSerializers(serializers.ModelSerializer):
+class TaskListSerializers(serializers.ModelSerializer):
     task_category = TaskCategorySerializers()
     provider = TaskProfileSerializer()
     
     class Meta:
         model = Task
         fields = '__all__'
+        
+
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'title', 'task_category', 'reward', 'done_date', 'schedule_time', 
+            'description', 'work_type', 'longitude', 'latitude', 'address'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['provider'] = self.context['request'].user.profile
+        return super().create(validated_data)

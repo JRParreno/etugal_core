@@ -1,4 +1,6 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
 from django.contrib.auth import views as auth_views
 
 from user_profile.views import (ProfileView,
@@ -6,10 +8,13 @@ from user_profile.views import (ProfileView,
                                 UploadPhotoView, RequestPasswordResetEmail
                                 )
 
-from task.views import TaskCategoryListView, TaskListView
+from task.views import TaskCategoryListView, TaskListView, TaskViewSet
 
 app_name = 'api'
 
+
+router = DefaultRouter()
+router.register(r'tasks', TaskViewSet)
 
 urlpatterns = [
      path('signup', RegisterView.as_view(), name='signup'),
@@ -29,4 +34,5 @@ urlpatterns = [
      path('task/list',
          TaskListView.as_view(),
          name='task-list'),   
+    path('provider/', include(router.urls)),
 ]

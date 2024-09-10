@@ -51,6 +51,8 @@ class Task(BaseModel, GeoItem):
     address = models.CharField(max_length=150)
     longitude = models.FloatField()
     latitude = models.FloatField()
+    done_date = models.DateField(null=True, blank=False)
+    schedule_time = models.TimeField(null=True, blank=False)
     status = models.CharField(
         max_length=15, choices=STATUSES, default=PENDING, verbose_name="Task Status")
     rejection_reason = models.TextField(blank=True, null=True)
