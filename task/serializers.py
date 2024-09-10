@@ -36,15 +36,21 @@ class TaskApplicantSerializer(serializers.ModelSerializer):
         fields = ['performer',]
 
 class TaskSerializer(serializers.ModelSerializer):
-    task_category = TaskCategorySerializers()
+    # Use PrimaryKeyRelatedField for write operations, rename to task_category_id
+    task_category_id = serializers.PrimaryKeyRelatedField(
+        queryset=TaskCategory.objects.all(), write_only=True, source='task_category'
+    )
+    # Use TaskCategorySerializers for read operations, keeping task_category as a full object
+    task_category = TaskCategorySerializers(read_only=True)
     provider = TaskProfileSerializer(read_only=True)
-    performer = TaskProfileSerializer(read_only=False)
     task_applicants = TaskApplicantSerializer(many=True, read_only=True, source='task_applicant')
-
+    performer = serializers.PrimaryKeyRelatedField(
+        queryset=UserProfile.objects.all(), required=False, allow_null=True
+    )
     class Meta:
         model = Task
         fields = [
-            'id', 'title', 'task_category', 'reward', 'done_date', 'schedule_time', 
+            'id', 'title', 'task_category_id', 'task_category', 'reward', 'done_date', 'schedule_time', 
             'description', 'work_type', 'longitude', 'latitude', 'address', 'provider',
             'performer', 'created_at', 'updated_at', 'status', 'rejection_reason', 'task_applicants'
         ]

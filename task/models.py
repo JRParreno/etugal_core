@@ -83,6 +83,7 @@ class Task(BaseModel, GeoItem):
         managed = True
         verbose_name = "Task"
         verbose_name_plural = "Tasks"
+        ordering = ['-updated_at',]
     
     def __str__(self):
         return f"{self.title} - {self.status}"
