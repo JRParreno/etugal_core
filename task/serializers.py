@@ -3,7 +3,7 @@ from rest_framework import serializers
 from user_profile.serializers import UserSerializer
 from user_profile.models import UserProfile
 
-from .models import TaskApplicant, TaskCategory, Task
+from .models import TaskApplicant, TaskCategory, Task, TaskReview
 
 class TaskCategorySerializers(serializers.ModelSerializer):
     class Meta:
@@ -26,6 +26,14 @@ class TaskListSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Task
+        fields = '__all__'
+
+
+class TaskReviewSerializers(serializers.ModelSerializer):
+    task = TaskListSerializers()
+
+    class Meta:
+        model = TaskReview
         fields = '__all__'
         
 class TaskApplicantSerializer(serializers.ModelSerializer):

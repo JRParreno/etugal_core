@@ -8,7 +8,7 @@ from user_profile.views import (ProfileView,
                                 UploadPhotoView, RequestPasswordResetEmail
                                 )
 
-from task.views import TaskCategoryListView, TaskListView, TaskViewSet
+from task.views import TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView
 
 app_name = 'api'
 
@@ -34,5 +34,8 @@ urlpatterns = [
      path('task/list',
          TaskListView.as_view(),
          name='task-list'),   
-    path('provider/', include(router.urls)),
+     path('provider/', include(router.urls)),
+     path('task/review/list',
+         TaskReviewListView.as_view(),
+         name='task-review-list'),
 ]

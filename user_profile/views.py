@@ -141,35 +141,48 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
-        user_profiles = UserProfile.objects.filter(user=user)
+        user_profile_id = request.query_params.get('user_profile_id', None)
 
-        if user_profiles.exists():
-            user_profile = user_profiles.first()
-
-            data = {
-                "pk": str(user.pk),
-                "profilePk": str(user_profile.pk),
-                "username": user.username,
-                "firstName": user.first_name,
-                "lastName": user.last_name,
-                "email": user.email,
-                "contactNumber": user_profile.contact_number,
-                "birthdate": user_profile.birthdate,
-                "profilePhoto": request.build_absolute_uri(user_profile.profile_photo.url) if user_profile.profile_photo else None,
-                "idPhoto": request.build_absolute_uri(user_profile.id_photo.url) if user_profile.id_photo else None,
-                "address": user_profile.address,
-                "gender": user_profile.gender,
-                "verificationStatus": user_profile.verification_status,
-                "verificationRemarks": user_profile.verification_remarks,
-            }
-
-            return response.Response(data, status=status.HTTP_200_OK)
-
+        if user_profile_id:
+            # Fetch the profile using the provided user_profile_id and override the user
+            try:
+                user_profile = UserProfile.objects.get(pk=user_profile_id)
+                user = user_profile.user  # Override user with the owner of the profile
+            except UserProfile.DoesNotExist:
+                return response.Response(
+                    {"error_message": "Profile not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
         else:
-            error = {
-                "error_message": "Please setup your profile"
-            }
-            return response.Response(error, status=status.HTTP_400_BAD_REQUEST)
+            # Default to using the current user's profile
+            user_profiles = UserProfile.objects.filter(user=user)
+            if user_profiles.exists():
+                user_profile = user_profiles.first()
+            else:
+                return response.Response(
+                    {"error_message": "Please setup your profile."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Prepare the response data
+        data = {
+            "pk": str(user.pk),
+            "profilePk": str(user_profile.pk),
+            "username": user.username,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+            "email": user.email,
+            "contactNumber": user_profile.contact_number,
+            "birthdate": user_profile.birthdate,
+            "profilePhoto": request.build_absolute_uri(user_profile.profile_photo.url) if user_profile.profile_photo else None,
+            "idPhoto": request.build_absolute_uri(user_profile.id_photo.url) if user_profile.id_photo else None,
+            "address": user_profile.address,
+            "gender": user_profile.gender,
+            "verificationStatus": user_profile.verification_status,
+            "verificationRemarks": user_profile.verification_remarks,
+        }
+
+        return response.Response(data, status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
         user = self.request.user
