@@ -53,7 +53,7 @@ class Task(BaseModel, GeoItem):
     longitude = models.FloatField()
     latitude = models.FloatField()
     done_date = models.DateField(null=True, blank=False)
-    schedule_time = models.TimeField(null=True, blank=False)
+    schedule_time = models.TimeField(null=True, blank=True)
     is_done_perform = models.BooleanField(default=False)
     status = models.CharField(
         max_length=15, choices=STATUSES, default=PENDING, verbose_name="Task Status")

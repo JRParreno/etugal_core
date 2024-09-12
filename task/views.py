@@ -87,7 +87,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 class TaskReviewListView(generics.ListAPIView):
     serializer_class = TaskReviewSerializers
     permission_classes = [permissions.IsAuthenticated]
-    queryset = TaskReview.objects.all().order_by('-created_at')
+    queryset = TaskReview.objects.filter(task__status=Task.COMPLETED).order_by('-created_at')
     pagination_class = ExtraSmallResultsSetPagination
 
     def get_queryset(self):
@@ -104,7 +104,7 @@ class TaskReviewListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        if queryset is None or not queryset.exists():
+        if queryset is None:
             return response.Response(
                 {"error_message": "Please provide either a performer or provider ID."},
                 status=status.HTTP_400_BAD_REQUEST

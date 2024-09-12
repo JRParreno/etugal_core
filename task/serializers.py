@@ -59,7 +59,8 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'task_category_id', 'task_category', 'reward', 'done_date', 'schedule_time', 
             'description', 'work_type', 'longitude', 'latitude', 'address', 'provider',
-            'performer', 'created_at', 'updated_at', 'status', 'rejection_reason', 'task_applicants'
+            'performer', 'created_at', 'updated_at', 'status', 'rejection_reason', 'task_applicants', 'done_date',
+            'schedule_time', 'is_done_perform'
         ]
         
         extra_kwargs = {
