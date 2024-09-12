@@ -18,7 +18,7 @@ class TaskCategoryListView(generics.ListAPIView):
 class TaskListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated,]
     serializer_class = TaskListSerializers
-    queryset = Task.objects.all().order_by('-created_at')
+    queryset = Task.objects.all()
     pagination_class = ExtraSmallResultsSetPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['title',]
@@ -51,7 +51,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'])
     def patch_performer(self, request, pk=None):
         task = self.get_object()
-        performer_id = request.data.get('performer')
+        performer_id = request.data.get('performer_id')
 
         # Validate that the performer exists
         if performer_id:

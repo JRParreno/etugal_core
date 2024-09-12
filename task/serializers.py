@@ -41,7 +41,7 @@ class TaskApplicantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskApplicant
-        fields = ['performer',]
+        fields = ['performer', 'description',]
 
 class TaskSerializer(serializers.ModelSerializer):
     # Use PrimaryKeyRelatedField for write operations, rename to task_category_id
@@ -52,9 +52,8 @@ class TaskSerializer(serializers.ModelSerializer):
     task_category = TaskCategorySerializers(read_only=True)
     provider = TaskProfileSerializer(read_only=True)
     task_applicants = TaskApplicantSerializer(many=True, read_only=True, source='task_applicant')
-    performer = serializers.PrimaryKeyRelatedField(
-        queryset=UserProfile.objects.all(), required=False, allow_null=True
-    )
+    performer = TaskProfileSerializer(read_only=True)
+    
     class Meta:
         model = Task
         fields = [
