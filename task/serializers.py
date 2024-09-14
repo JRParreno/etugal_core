@@ -72,3 +72,9 @@ class TaskSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+
+class CreateTaskApplicantSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TaskApplicant
+        fields = '__all__'

@@ -10,11 +10,14 @@
             "request": "launch",
             "args": [
                 "runserver",
-                "192.168.1.11:8000"
+                "192.168.1.6:8000"
             ],
             "django": true,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/manage.py"
+            "program": "${workspaceFolder}/manage.py",
+            "env": {
+                "GOOGLE_APPLICATION_CREDENTIALS": "./application_default_credentials.json",
+            }
         }
     ]
 }

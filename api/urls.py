@@ -8,7 +8,7 @@ from user_profile.views import (ProfileView,
                                 UploadPhotoView, RequestPasswordResetEmail
                                 )
 
-from task.views import TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView
+from task.views import TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView, TaskApplicantCreateView
 
 app_name = 'api'
 
@@ -38,4 +38,7 @@ urlpatterns = [
      path('task/review/list',
          TaskReviewListView.as_view(),
          name='task-review-list'),
+
+     path('taskapplicant/create/', TaskApplicantCreateView.as_view(), name='taskapplicant-create'),
+
 ]

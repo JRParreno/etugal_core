@@ -9,6 +9,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from django.views.generic import RedirectView
+from fcm_django.api.rest_framework import FCMDeviceAuthorizedViewSet
 
 from .views import TokenViewWithUserId
 
@@ -26,7 +27,8 @@ schema_view = get_schema_view(
     public=False,
     permission_classes=(permissions.AllowAny,),
 )
-
+router = DefaultRouter()
+router.register('devices', FCMDeviceAuthorizedViewSet)
 
 urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger',
@@ -43,6 +45,6 @@ urlpatterns = [
          name='password_reset_complete'),
 ]
 
-
+urlpatterns += router.urls
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,10 +1,12 @@
 from rest_framework import generics, permissions, response, filters, viewsets, status
 
 from core.paginate import ExtraSmallResultsSetPagination
+from task.notification import notifyTask
 from user_profile.models import UserProfile
-from .models import TaskCategory, Task, TaskReview
-from .serializers import TaskCategorySerializers, TaskListSerializers, TaskSerializer, TaskReviewSerializers
+from .models import TaskCategory, Task, TaskReview, TaskApplicant
+from .serializers import TaskCategorySerializers, TaskListSerializers, TaskSerializer, TaskReviewSerializers, CreateTaskApplicantSerializer
 from rest_framework.decorators import action
+from firebase_admin.messaging import Message, Notification
 
 class TaskCategoryListView(generics.ListAPIView):
     serializer_class = TaskCategorySerializers
@@ -54,6 +56,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         performer_id = request.data.get('performer_id')
 
         # Validate that the performer exists
+        # TODO notify performer
         if performer_id:
             try:
                 performer = UserProfile.objects.get(pk=performer_id)
@@ -61,6 +64,17 @@ class TaskViewSet(viewsets.ModelViewSet):
                 task.status = Task.IN_PROGRESS
                 task.save()
                 serializer = TaskSerializer(task)
+                
+                body = f"{task.title}\n\nProvider accepted your application."
+                data = {
+                    "title": "E-Tugal",
+                    "body": body,
+                }
+                notification = {
+                    "title": "Application Accepted", "body": body
+                }
+
+                notifyTask(performer.user, notification, data)
                 return response.Response(serializer.data, status=status.HTTP_200_OK)
             except UserProfile.DoesNotExist:
                 return response.Response({"error": "Performer does not exist."}, status=status.HTTP_400_BAD_REQUEST)
@@ -119,3 +133,29 @@ class TaskReviewListView(generics.ListAPIView):
         # If pagination is not applied, return a normal response
         serializer = self.get_serializer(queryset, many=True)
         return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class TaskApplicantCreateView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = TaskApplicant.objects.all()
+    serializer_class = CreateTaskApplicantSerializer
+
+    def perform_create(self, serializer):
+        task_applicant = serializer.save()
+
+        # Notify user logic
+        user = self.request.user
+        task = task_applicant.task  # Assuming Task is related to TaskApplicant
+        
+        # Example: Sending an email notification
+        body = f"{task.title}\n\nSomeone applied in your task."
+        data = {
+            "title": "E-Tugal",
+            "body": body,
+        }
+        notification = {
+            "title": "View Applicant", "body": body
+        }
+
+        notifyTask(task.provider.user, notification, data)
