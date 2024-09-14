@@ -78,3 +78,22 @@ class CreateTaskApplicantSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskApplicant
         fields = '__all__'
+
+
+class TaskListApplicantSerializer(serializers.ModelSerializer):
+    task = TaskSerializer(read_only=True)
+
+    class Meta:
+        model = TaskApplicant
+        fields = ['task',]
+    
+    
+    def to_representation(self, instance):
+        # Get the original representation from the parent serializer
+        representation = super().to_representation(instance)
+        
+        # Extract the `task` data from the representation and return it directly
+        task_data = representation.pop('task')
+        
+        # Return the task data without wrapping it in the `task` field
+        return task_data

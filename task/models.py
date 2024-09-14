@@ -109,6 +109,7 @@ class TaskApplicant(BaseModel):
         unique_together = ['task', 'performer',]
         verbose_name = "Applicant"
         verbose_name_plural = "Applicants"
+        ordering = ['-updated_at']
     
     def __str__(self):
         return f"{self.task.title} - {self.performer.user.get_full_name}"

@@ -4,7 +4,8 @@ from core.paginate import ExtraSmallResultsSetPagination
 from task.notification import notifyTask
 from user_profile.models import UserProfile
 from .models import TaskCategory, Task, TaskReview, TaskApplicant
-from .serializers import TaskCategorySerializers, TaskListSerializers, TaskSerializer, TaskReviewSerializers, CreateTaskApplicantSerializer
+from .serializers import (TaskCategorySerializers, TaskListSerializers, TaskSerializer, 
+                          TaskReviewSerializers, CreateTaskApplicantSerializer, TaskListApplicantSerializer)
 from rest_framework.decorators import action
 from firebase_admin.messaging import Message, Notification
 
@@ -65,13 +66,13 @@ class TaskViewSet(viewsets.ModelViewSet):
                 task.save()
                 serializer = TaskSerializer(task)
                 
-                body = f"{task.title}\n\nProvider accepted your application."
+                body = f"Congratulations! Your application for the task {task.title} has been approved. You can now communicate with the Task Provider to finalize the details."
                 data = {
                     "title": "E-Tugal",
                     "body": body,
                 }
                 notification = {
-                    "title": "Application Accepted", "body": body
+                    "title": "E-Tugal", "body": body
                 }
 
                 notifyTask(performer.user, notification, data)
@@ -95,6 +96,20 @@ class TaskViewSet(viewsets.ModelViewSet):
             return response.Response(serializer.errors, status=400)
         else:
             return response.Response({"error": f"Invalid status. Allowed statuses: {list(dict(Task.STATUSES).keys())}"}, status=400)
+
+
+class PerformerTaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(performer=self.request.user.profile)
+        status = self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
+
 
 
 
@@ -148,14 +163,31 @@ class TaskApplicantCreateView(generics.CreateAPIView):
         user = self.request.user
         task = task_applicant.task  # Assuming Task is related to TaskApplicant
         
-        # Example: Sending an email notification
-        body = f"{task.title}\n\nSomeone applied in your task."
+        body = f"A new performer has applied for your task: {task.title}. Review their profile and approve if suitable."
         data = {
             "title": "E-Tugal",
             "body": body,
         }
         notification = {
-            "title": "View Applicant", "body": body
+            "title": "E-Tugal", "body": body
         }
 
         notifyTask(task.provider.user, notification, data)
+
+
+class TaskListApplicantView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = TaskApplicant.objects.all()
+    serializer_class = TaskListApplicantSerializer
+    pagination_class = ExtraSmallResultsSetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(performer=self.request.user.profile)
+        status = self.request.query_params.get('status', None)
+        if status:
+            if status == Task.PENDING:
+                queryset = queryset.filter(task__status=status, task__performer=None)
+            else:
+                queryset = queryset.filter(task__status=status, task__performer=self.request.user.profile)
+        return queryset
+    
