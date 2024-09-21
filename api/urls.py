@@ -9,7 +9,7 @@ from user_profile.views import (ProfileView,
                                 )
 
 from task.views import (TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView, 
-                        TaskApplicantCreateView, TaskListApplicantView, PerformerTaskViewSet)
+                        TaskApplicantCreateView, TaskListApplicantView, PerformerTaskViewSet, TaskReviewViewSet)
 
 app_name = 'api'
 
@@ -41,6 +41,7 @@ urlpatterns = [
      path('task/review/list',
          TaskReviewListView.as_view(),
          name='task-review-list'),
+     path('task/<int:task_id>/review/', TaskReviewViewSet.as_view({'post': 'create_or_update', 'get': 'retrieve'})),
 
      path('taskapplicant/create/', TaskApplicantCreateView.as_view(), name='taskapplicant-create'),
      path('taskapplicant/list/', TaskListApplicantView.as_view(), name='taskapplicant-list'),

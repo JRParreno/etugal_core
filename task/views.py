@@ -155,9 +155,9 @@ class TaskReviewListView(generics.ListAPIView):
         provider_id = self.request.query_params.get('provider', None)
 
         if performer_id:
-            return TaskReview.objects.filter(task__performer__id=performer_id)
+            return TaskReview.objects.filter(task__performer__id=performer_id, performer_rate__gt=0)
         elif provider_id:
-            return TaskReview.objects.filter(task__provider__id=provider_id)
+            return TaskReview.objects.filter(task__provider__id=provider_id, provider_rate__gt=0)
         else:
             return None
 
@@ -221,4 +221,46 @@ class TaskListApplicantView(generics.ListAPIView):
             else:
                 queryset = queryset.filter(task__status=status, task__performer=self.request.user.profile)
         return queryset
-    
+
+
+
+
+class TaskReviewViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create_or_update(self, request, task_id=None):
+        try:
+            # Get the task based on the provided task_id
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            return response.Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if a review for this task already exists
+        try:
+            task_review = TaskReview.objects.get(task=task)
+            # If a review exists, update it
+            serializer = TaskReviewSerializers(task_review, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return response.Response(serializer.data, status=status.HTTP_200_OK)
+            return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except TaskReview.DoesNotExist:
+            # If no review exists, create one
+            serializer = TaskReviewSerializers(data=request.data, partial=True)
+            if serializer.is_valid():
+                # Manually assign the task to the review
+                serializer.save(task=task)
+                return response.Response(serializer.data, status=status.HTTP_201_CREATED)
+            return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, task_id=None):
+        try:
+            # Get the task based on the provided task_id
+            task = Task.objects.get(id=task_id)
+            task_review = TaskReview.objects.get(task=task)
+            serializer = TaskReviewSerializers(task_review)
+            return response.Response(serializer.data, status=status.HTTP_200_OK)
+        except Task.DoesNotExist:
+            return response.Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+        except TaskReview.DoesNotExist:
+            return response.Response({"error": "Review not found for this task."}, status=status.HTTP_404_NOT_FOUND)

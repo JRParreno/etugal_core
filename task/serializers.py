@@ -35,7 +35,20 @@ class TaskReviewSerializers(serializers.ModelSerializer):
     class Meta:
         model = TaskReview
         fields = '__all__'
+        read_only_fields = ['task']
 
+    def create(self, validated_data):
+        # Create a review for a task
+        return TaskReview.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        # Update the review instance
+        instance.provider_rate = validated_data.get('provider_rate', instance.provider_rate)
+        instance.provider_feedback = validated_data.get('provider_feedback', instance.provider_feedback)
+        instance.performer_rate = validated_data.get('performer_rate', instance.performer_rate)
+        instance.performer_feedback = validated_data.get('performer_feedback', instance.performer_feedback)
+        instance.save()
+        return instance
 
 class TaskPrevReviewSerializers(serializers.ModelSerializer):
     class Meta:
