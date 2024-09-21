@@ -116,15 +116,16 @@ class TaskApplicant(BaseModel):
 
 
 class TaskReview(BaseModel):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_review')
-    provider_rate = models.IntegerField(default=0, choices=((i,i) for i in range(1, 6)))
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name='task_review')
+    provider_rate = models.IntegerField(default=0, choices=((i,i) for i in range(0, 6)))
     provider_feedback = models.TextField(null=True, blank=True)
-    performer_rate = models.IntegerField(default=0, choices=((i,i) for i in range(1, 6)))
+    performer_rate = models.IntegerField(default=0, choices=((i,i) for i in range(0, 6)))
     performer_feedback = models.TextField(null=True, blank=True)
     
     class Meta:
         verbose_name = "Review"
         verbose_name_plural = "Review"
+        ordering = ['-updated_at']
     
     def __str__(self):
         return self.task.title

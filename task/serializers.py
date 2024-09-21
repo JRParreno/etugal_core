@@ -35,6 +35,12 @@ class TaskReviewSerializers(serializers.ModelSerializer):
     class Meta:
         model = TaskReview
         fields = '__all__'
+
+
+class TaskPrevReviewSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = TaskReview
+        exclude = ['task']
         
 class TaskApplicantSerializer(serializers.ModelSerializer):
     performer = TaskProfileSerializer(read_only=True)
@@ -53,14 +59,15 @@ class TaskSerializer(serializers.ModelSerializer):
     provider = TaskProfileSerializer(read_only=True)
     task_applicants = TaskApplicantSerializer(many=True, read_only=True, source='task_applicant')
     performer = TaskProfileSerializer(read_only=True)
-    
+    review = TaskPrevReviewSerializers(read_only=True, source='task_review')
+
     class Meta:
         model = Task
         fields = [
             'id', 'title', 'task_category_id', 'task_category', 'reward', 'done_date', 'schedule_time', 
             'description', 'work_type', 'longitude', 'latitude', 'address', 'provider',
             'performer', 'created_at', 'updated_at', 'status', 'rejection_reason', 'task_applicants', 'done_date',
-            'schedule_time', 'is_done_perform'
+            'schedule_time', 'is_done_perform', 'review',
         ]
         
         extra_kwargs = {
