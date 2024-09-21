@@ -8,13 +8,16 @@ from user_profile.views import (ProfileView,
                                 UploadPhotoView, RequestPasswordResetEmail
                                 )
 
-from task.views import TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView, TaskApplicantCreateView, TaskListApplicantView
+from task.views import (TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView, 
+                        TaskApplicantCreateView, TaskListApplicantView, PerformerTaskViewSet)
 
 app_name = 'api'
 
 
 router = DefaultRouter()
-router.register(r'tasks', TaskViewSet)
+router.register(r'provider/task', TaskViewSet, basename='provider')
+router.register(r'performer/task', PerformerTaskViewSet, basename='performer')
+
 
 urlpatterns = [
      path('signup', RegisterView.as_view(), name='signup'),
@@ -34,7 +37,7 @@ urlpatterns = [
      path('task/list',
          TaskListView.as_view(),
          name='task-list'),   
-     path('provider/', include(router.urls)),
+     path('', include(router.urls)),
      path('task/review/list',
          TaskReviewListView.as_view(),
          name='task-review-list'),

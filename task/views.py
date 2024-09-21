@@ -8,6 +8,7 @@ from .serializers import (TaskCategorySerializers, TaskListSerializers, TaskSeri
                           TaskReviewSerializers, CreateTaskApplicantSerializer, TaskListApplicantSerializer)
 from rest_framework.decorators import action
 from firebase_admin.messaging import Message, Notification
+from django.db.models import Q
 
 class TaskCategoryListView(generics.ListAPIView):
     serializer_class = TaskCategorySerializers
@@ -56,8 +57,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         performer_id = request.data.get('performer_id')
 
-        # Validate that the performer exists
-        # TODO notify performer
         if performer_id:
             try:
                 performer = UserProfile.objects.get(pk=performer_id)
@@ -87,7 +86,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         new_status = request.data.get('status')
         
-        # Ensure the new status is valid
         if new_status in dict(Task.STATUSES).keys():
             serializer = TaskSerializer(task, data=request.data, partial=True)
             if serializer.is_valid():
@@ -98,6 +96,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             return response.Response({"error": f"Invalid status. Allowed statuses: {list(dict(Task.STATUSES).keys())}"}, status=400)
 
 
+    
 class PerformerTaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
@@ -111,6 +110,38 @@ class PerformerTaskViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+    @action(detail=True, methods=['patch'])
+    def patch_is_done_perform(self, request, pk=None):
+        task = self.get_object()
+        is_done_perform = request.data.get('is_done_perform')
+
+        # Check if performer exists
+        if task.performer is None:
+            return response.Response({"error": "No performer assigned to this task."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if is_done_perform is not None:
+            if isinstance(is_done_perform, bool):  # Ensure the value is a boolean
+                task.is_done_perform = is_done_perform
+                task.save()
+
+                # Notify the performer about the status update, if needed
+                if is_done_perform:  # For example, only notify if the task is marked as done
+                    notification = {
+                        "title": "Task Update",
+                        "body": f"The task '{task.title}' has been marked as completed by the performer."
+                    }
+                    data = {
+                        "title": "Task Update",
+                        "body": f"The task '{task.title}' is done."
+                    }
+                    notifyTask(task.provider.user, notification, data)
+
+                serializer = TaskSerializer(task)
+                return response.Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return response.Response({"error": "Invalid value for is_done_perform. Must be true or false."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return response.Response({"error": "is_done_perform is required."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TaskReviewListView(generics.ListAPIView):
