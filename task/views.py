@@ -51,7 +51,22 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(provider=self.request.user)
-    
+
+    def partial_update(self, request, *args, **kwargs):
+        """Handles PATCH requests to update any or all fields of the Task."""
+        # Get the task object
+        task = self.get_object()
+
+        # Use serializer to partially update the task
+        serializer = self.get_serializer(task, data=request.data, partial=True)
+
+        # Validate and save the serializer
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Return the updated data
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+        
     @action(detail=True, methods=['patch'])
     def patch_performer(self, request, pk=None):
         task = self.get_object()
