@@ -10,6 +10,7 @@ from user_profile.views import (ProfileView,
 
 from task.views import (TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView, 
                         TaskApplicantCreateView, TaskListApplicantView, PerformerTaskViewSet, TaskReviewViewSet)
+from chat.views import ChatMessageListView, ChatMessageRetrieveView, ChatSessionListCreateView, SearchChatUserListView
 
 app_name = 'api'
 
@@ -45,4 +46,14 @@ urlpatterns = [
 
      path('taskapplicant/create/', TaskApplicantCreateView.as_view(), name='taskapplicant-create'),
      path('taskapplicant/list/', TaskListApplicantView.as_view(), name='taskapplicant-list'),
+     
+     # Chat
+     path('chat-sessions', ChatSessionListCreateView.as_view(),
+          name='chat-sessions'),
+     path('chat-messages', ChatMessageListView.as_view(),
+          name='chat-messages'),
+     path('chat-session/retrieve', ChatMessageRetrieveView.as_view(),
+     name='chat-session'),
+     path('chat-sessions/search', SearchChatUserListView.as_view(),
+          name='chat-sessions-search'),
 ]

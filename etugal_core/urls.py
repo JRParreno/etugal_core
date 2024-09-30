@@ -10,7 +10,7 @@ from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from django.views.generic import RedirectView
 from fcm_django.api.rest_framework import FCMDeviceAuthorizedViewSet
-
+from chat.views import chatPage
 from .views import TokenViewWithUserId
 
 
@@ -37,6 +37,7 @@ urlpatterns = [
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('o/login/', TokenViewWithUserId.as_view(), name='token'),
     path('admin/', admin.site.urls),
+    path('chat/', chatPage, name="chat-page"),
     path('', RedirectView.as_view(url='/admin/', permanent=True)),
     path('api/', include('api.urls', namespace='api')),
     path('password-reset-complete/',
