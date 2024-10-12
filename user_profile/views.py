@@ -16,9 +16,9 @@ from datetime import (
 )
 from django.utils.crypto import get_random_string
 from django.conf import settings
-from user_profile.models import UserProfile
+from user_profile.models import UserProfile, UserReport
 from .serializers import (ChangePasswordSerializer, ProfileSerializer, RegisterSerializer,
-                          UploadPhotoSerializer, ResetPasswordEmailRequestSerializer)
+                          UploadPhotoSerializer, ResetPasswordEmailRequestSerializer, UserReportSerializer)
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import smart_bytes
 from django.contrib.sites.shortcuts import get_current_site
@@ -127,6 +127,11 @@ class RegisterView(generics.CreateAPIView):
                 "verificationRemarks": user_profile.verification_remarks,
                 "access_token": oauth_token.token,
                 "refresh_token": refresh_token.token,
+                "is_suspended": user_profile.is_suspended,
+                "suspension_reason": user_profile.suspension_reason,
+                "suspended_until": user_profile.suspended_until.isoformat() if user_profile.suspended_until else None,
+                "is_terminated": user_profile.is_terminated,
+                "termination_reason": user_profile.termination_reason,
             }
 
         return response.Response(
@@ -180,6 +185,11 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             "gender": user_profile.gender,
             "verificationStatus": user_profile.verification_status,
             "verificationRemarks": user_profile.verification_remarks,
+            "is_suspended": user_profile.is_suspended,
+            "suspension_reason": user_profile.suspension_reason,
+            "suspended_until": user_profile.suspended_until.isoformat() if user_profile.suspended_until else None,
+            "is_terminated": user_profile.is_terminated,
+            "termination_reason": user_profile.termination_reason,
         }
 
         return response.Response(data, status=status.HTTP_200_OK)
@@ -221,6 +231,11 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             "gender": user_profile.gender,
             "verificationStatus": user_profile.verification_status,
             "verificationRemarks": user_profile.verification_remarks,
+            "is_suspended": user_profile.is_suspended,
+            "suspension_reason": user_profile.suspension_reason,
+            "suspended_until": user_profile.suspended_until.isoformat() if user_profile.suspended_until else None,
+            "is_terminated": user_profile.is_terminated,
+            "termination_reason": user_profile.termination_reason,
         }
         return response.Response(data, status=status.HTTP_200_OK)
 
@@ -323,3 +338,12 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
             {'success': 'We have sent you a link to reset your password'},
             status=status.HTTP_200_OK
         )
+
+
+class UserReportCreateView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = UserReport.objects.all()
+    serializer_class = UserReportSerializer
+
+    def perform_create(self, serializer):
+        serializer.save()

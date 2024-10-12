@@ -23,6 +23,9 @@ class TokenViewWithUserId(TokenView):
                     
                     # Check if the user has a profile
                     profile = token.user.profile
+                    
+                    profile.is_active()
+                    
                     if profile is None:
                         raise ObjectDoesNotExist("User profile does not exist")
 
@@ -46,7 +49,12 @@ class TokenViewWithUserId(TokenView):
                         "verificationStatus": profile.verification_status,
                         "verificationRemarks": profile.verification_remarks,
                         "access_token": access_token,
-                        "refresh_token": body.get("refresh_token")
+                        "refresh_token": body.get("refresh_token"),
+                        "is_suspended": profile.is_suspended,
+                        "suspension_reason": profile.suspension_reason,
+                        "suspended_until": profile.suspended_until.isoformat() if profile.suspended_until else None,
+                        "is_terminated": profile.is_terminated,
+                        "termination_reason": profile.termination_reason,
                     }
                     
                     body = json.dumps(data)

@@ -1,11 +1,45 @@
 from django import utils
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, ReportImage, UserReport
 from django.core.files.base import ContentFile
 import base64
 
 
+class ReportImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReportImage
+        fields = ['image']
+
+class UserReportSerializer(serializers.ModelSerializer):
+    images_list = ReportImageSerializer(source='images', many=True, read_only=True)
+    class Meta:
+        model = UserReport
+        fields = '__all__'
+    
+        extra_kwargs = {
+            'reporter': {
+                'read_only': True
+            },
+        }
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        
+        # Automatically set the reporter to the current user
+        if request and hasattr(request, 'user'):
+            validated_data['reporter'] = request.user
+
+        # Create the UserReport instance
+        report = UserReport.objects.create(**validated_data)
+
+        # Handle images
+        images = request.FILES.getlist('images')  # Access the files directly
+        for image in images:
+            ReportImage.objects.create(report=report, image=image)  # Create ReportImage instances
+
+        return report
+    
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -68,8 +102,8 @@ class ProfileSerializer(serializers.Serializer):
 
     class Meta:
         model = UserProfile
-        fields = ('user', 'birthdate', 'address', 'gender',
-                  'profile_photo', 'profile_photo_image_64')
+        fields = ('user', 'birthdate', 'address', 'gender', 'is_suspended', 'suspension_reason', 'suspended_until',
+                  'profile_photo', 'profile_photo_image_64', 'is_terminated', 'termination_reason',)
 
         extra_kwargs = {
             'profile_photo': {
@@ -184,3 +218,5 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['email_address']
+        
+

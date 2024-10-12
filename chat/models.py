@@ -39,8 +39,7 @@ class ChatMessage(BaseModel):
         receiver = self.user_profile
         sender = self.chat_session.provider if self.chat_session.provider.user.username != receiver.user.username else self.chat_session.performer
 
-
-        for device in FCMDevice.objects.all().filter(user=receiver.user):
+        for device in FCMDevice.objects.all().filter(user=sender.user):
             data = {
                 "title": "ETugal",
                 "body": self.message,
@@ -49,7 +48,7 @@ class ChatMessage(BaseModel):
             device.send_message(
                 Message(
                     notification=Notification(
-                        title="New Message", body=self.message
+                        title="Someone message you", body=self.message
                     ),
                     data={
                         "json": json.dumps(data)

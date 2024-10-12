@@ -42,7 +42,7 @@ class Task(BaseModel, GeoItem):
         (REJECTED, 'Rejected'),
     ]
     
-    title = models.CharField(max_length=25)
+    title = models.CharField(max_length=30)
     task_category = models.ForeignKey(TaskCategory, on_delete=models.CASCADE)
     provider = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='task_provider')
     performer = models.ForeignKey(UserProfile, null=True, blank=True, on_delete=models.CASCADE, related_name='task_performer')

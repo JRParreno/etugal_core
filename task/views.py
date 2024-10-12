@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, response, filters, viewsets, status
+from rest_framework import generics, permissions, response, filters, viewsets, status, exceptions
 
 from core.paginate import ExtraSmallResultsSetPagination
 from task.notification import notifyTask
@@ -50,6 +50,13 @@ class TaskViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
+        user = self.request.user.profile
+        
+        user.is_active()
+        
+        if user.is_suspended or user.is_terminated:
+            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+    
         serializer.save(provider=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
@@ -92,9 +99,9 @@ class TaskViewSet(viewsets.ModelViewSet):
                 notifyTask(performer.user, notification, data)
                 return response.Response(serializer.data, status=status.HTTP_200_OK)
             except UserProfile.DoesNotExist:
-                return response.Response({"error": "Performer does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+                return response.Response({"error_message": "Performer does not exist."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return response.Response({"error": "Performer ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return response.Response({"error_message": "Performer ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['patch'])
     def patch_status(self, request, pk=None):
@@ -108,7 +115,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                 return response.Response(serializer.data)
             return response.Response(serializer.errors, status=400)
         else:
-            return response.Response({"error": f"Invalid status. Allowed statuses: {list(dict(Task.STATUSES).keys())}"}, status=400)
+            return response.Response({"error_message": f"Invalid status. Allowed statuses: {list(dict(Task.STATUSES).keys())}"}, status=400)
 
 
     
@@ -132,7 +139,7 @@ class PerformerTaskViewSet(viewsets.ModelViewSet):
 
         # Check if performer exists
         if task.performer is None:
-            return response.Response({"error": "No performer assigned to this task."}, status=status.HTTP_400_BAD_REQUEST)
+            return response.Response({"error_message": "No performer assigned to this task."}, status=status.HTTP_400_BAD_REQUEST)
 
         if is_done_perform is not None:
             if isinstance(is_done_perform, bool):  # Ensure the value is a boolean
@@ -154,9 +161,9 @@ class PerformerTaskViewSet(viewsets.ModelViewSet):
                 serializer = TaskSerializer(task)
                 return response.Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                return response.Response({"error": "Invalid value for is_done_perform. Must be true or false."}, status=status.HTTP_400_BAD_REQUEST)
+                return response.Response({"error_message": "Invalid value for is_done_perform. Must be true or false."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return response.Response({"error": "is_done_perform is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return response.Response({"error_message": "is_done_perform is required."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TaskReviewListView(generics.ListAPIView):
@@ -203,10 +210,19 @@ class TaskApplicantCreateView(generics.CreateAPIView):
     serializer_class = CreateTaskApplicantSerializer
 
     def perform_create(self, serializer):
-        task_applicant = serializer.save()
 
         # Notify user logic
-        user = self.request.user
+        user = self.request.user.profile
+        
+        # Validate user's status before creating TaskApplicant
+        if user.is_suspended:
+            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+    
+        if user.is_terminated:
+            raise exceptions.ValidationError({"error_message": "Your account is terminated."})
+   
+        
+        task_applicant = serializer.save()
         task = task_applicant.task  # Assuming Task is related to TaskApplicant
         
         body = f"A new performer has applied for your task: {task.title}. Review their profile and approve if suitable."
@@ -248,7 +264,7 @@ class TaskReviewViewSet(viewsets.ViewSet):
             # Get the task based on the provided task_id
             task = Task.objects.get(id=task_id)
         except Task.DoesNotExist:
-            return response.Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+            return response.Response({"error_message": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if a review for this task already exists
         try:
@@ -276,6 +292,6 @@ class TaskReviewViewSet(viewsets.ViewSet):
             serializer = TaskReviewSerializers(task_review)
             return response.Response(serializer.data, status=status.HTTP_200_OK)
         except Task.DoesNotExist:
-            return response.Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+            return response.Response({"error_message": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
         except TaskReview.DoesNotExist:
-            return response.Response({"error": "Review not found for this task."}, status=status.HTTP_404_NOT_FOUND)
+            return response.Response({"error_message": "Review not found for this task."}, status=status.HTTP_404_NOT_FOUND)

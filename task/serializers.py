@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from user_profile.serializers import UserSerializer
-from user_profile.models import UserProfile
+from user_profile.serializers import UserSerializer, UserReportSerializer
+from user_profile.models import UserProfile, UserReport
 
 from .models import TaskApplicant, TaskCategory, Task, TaskReview
 
@@ -13,10 +13,15 @@ class TaskCategorySerializers(serializers.ModelSerializer):
 
 class TaskProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    
+    report = serializers.SerializerMethodField()
     class Meta:
         model = UserProfile
         fields = '__all__'
+    
+    def get_report(self, obj):
+        # Check if the user has any reports
+        report = UserReport.objects.filter(reported_user=obj.user).exclude(status='Resolved').first()  # Assuming 'reporter' is a ForeignKey to the user in UserReport
+        return UserReportSerializer(report).data if report else None
 
 
 class TaskListSerializers(serializers.ModelSerializer):

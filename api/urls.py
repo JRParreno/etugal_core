@@ -5,7 +5,7 @@ from django.contrib.auth import views as auth_views
 
 from user_profile.views import (ProfileView,
                                 RegisterView, ChangePasswordView, 
-                                UploadPhotoView, RequestPasswordResetEmail
+                                UploadPhotoView, RequestPasswordResetEmail, UserReportCreateView
                                 )
 
 from task.views import (TaskCategoryListView, TaskListView, TaskViewSet, TaskReviewListView, 
@@ -56,4 +56,8 @@ urlpatterns = [
      name='chat-session'),
      path('chat-sessions/search', SearchChatUserListView.as_view(),
           name='chat-sessions-search'),
+     
+     #  Reports
+     path('reports/', UserReportCreateView.as_view(), name='user-report-create'),
+
 ]

@@ -4,7 +4,7 @@ from .models import ChatSession, ChatMessage
 from task.serializers import TaskSerializer, TaskProfileSerializer
 
 class ChatMessageSerializers(serializers.ModelSerializer):
-    user = TaskProfileSerializer()
+    user_profile = TaskProfileSerializer()
     class Meta:
         model = ChatMessage
         fields = '__all__'

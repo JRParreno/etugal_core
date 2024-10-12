@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from rest_framework import generics, permissions, response, status
+from rest_framework import generics, permissions, response, status, exceptions
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from user_profile.models import UserProfile
@@ -44,7 +44,7 @@ class SearchChatUserListView(generics.ListAPIView):
 class ChatSessionListCreateView(generics.ListCreateAPIView):
     serializer_class = ChatSessionSerializers
     permission_classes = [permissions.IsAuthenticated]
-    
+
     @swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter(
@@ -57,10 +57,27 @@ class ChatSessionListCreateView(generics.ListCreateAPIView):
         operation_id='list_provider'
     )
     def get_queryset(self):
-        current_profile = self.request.user.profile
+        user_profile = self.request.user.profile  # Get current user's profile
+
+        # Define task statuses to exclude
+        excluded_statuses = ['REJECTED', 'CANCELLED', 'COMPLETED']
+
+        # Filter chat sessions based on task conditions
         return ChatSession.objects.filter(
-            Q(provider=current_profile) | Q(performer=current_profile)
-        )
+            # Exclude tasks with REJECTED, CANCELLED, or COMPLETED status
+            ~Q(task__status__in=excluded_statuses),
+
+            # Include chat sessions where the current user is either the provider or performer
+            Q(provider=user_profile) | Q(performer=user_profile),
+
+            # Additional filter for tasks where the current user is the performer:
+            # - Include tasks where the performer is null
+            # - If the performer is not null, ensure it matches the current user
+            Q(task__performer=user_profile) | Q(task__performer__isnull=True)
+        ).exclude(
+            # Exclude suspended providers and performers
+            Q(provider__is_suspended=True) | Q(performer__is_suspended=True)
+        ).distinct()
 
     def post(self, request, *args, **kwargs):
         # Extract required fields from request data
@@ -68,11 +85,11 @@ class ChatSessionListCreateView(generics.ListCreateAPIView):
         provider_id = request.data.get('provider_id')
         performer_id = request.data.get('performer_id')
         room_name = request.data.get('room_name')
-        
+
         # Validate required fields
         if not all([task_id, provider_id, performer_id, room_name]):
             return response.Response(
-                {"detail": "Missing required fields."}, 
+                {"detail": "Missing required fields."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -84,20 +101,33 @@ class ChatSessionListCreateView(generics.ListCreateAPIView):
         except (UserProfile.DoesNotExist, Task.DoesNotExist) as e:
             return response.Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
+        # Validate user's status before creating TaskApplicant
+        if provider.is_suspended:
+            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+    
+        if provider.is_terminated:
+            raise exceptions.ValidationError({"error_message": "Your account is terminated."})
+
+        if performer.is_suspended:
+            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+    
+        if performer.is_terminated:
+            raise exceptions.ValidationError({"error_message": "Your account is terminated."})
+
         # Use `get_or_create` to simplify the check and create logic
         chat_session, created = ChatSession.objects.get_or_create(
-            task=task, 
-            provider=provider, 
-            performer=performer, 
+            task=task,
+            provider=provider,
+            performer=performer,
             room_name=room_name
         )
-        
+
         # Serialize the chat session
         serializer = ChatSessionSerializers(chat_session)
-        
+
         # Return appropriate response based on whether the session was created
         return response.Response(
-            serializer.data, 
+            serializer.data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 

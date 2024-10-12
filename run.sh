@@ -1,1 +1,1 @@
-daphne -b 192.168.1.20 -p 8000 etugal_core.asgi:application
+daphne -b 192.168.1.21 -p 8000 etugal_core.asgi:application
