@@ -102,17 +102,13 @@ class ChatSessionListCreateView(generics.ListCreateAPIView):
             return response.Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
         # Validate user's status before creating TaskApplicant
-        if provider.is_suspended:
-            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+        if provider.is_suspended or provider.is_terminated:
+            message = "terminated" if provider.is_terminated else "suspended"
+            raise exceptions.ValidationError({"error_message": f"Your account is {message}."})
     
-        if provider.is_terminated:
-            raise exceptions.ValidationError({"error_message": "Your account is terminated."})
-
-        if performer.is_suspended:
-            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
-    
-        if performer.is_terminated:
-            raise exceptions.ValidationError({"error_message": "Your account is terminated."})
+        if performer.is_suspended or performer.is_terminated:
+            message = "terminated" if performer.is_terminated else "suspended"
+            raise exceptions.ValidationError({"error_message": f"Your account is {message}"})
 
         # Use `get_or_create` to simplify the check and create logic
         chat_session, created = ChatSession.objects.get_or_create(

@@ -55,7 +55,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         user.is_active()
         
         if user.is_suspended or user.is_terminated:
-            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+            message = "terminated" if user.is_terminated else "suspended"
+            raise exceptions.ValidationError({"error_message": f"Your account is {message}."})
     
         serializer.save(provider=self.request.user)
 
@@ -215,12 +216,10 @@ class TaskApplicantCreateView(generics.CreateAPIView):
         user = self.request.user.profile
         
         # Validate user's status before creating TaskApplicant
-        if user.is_suspended:
-            raise exceptions.ValidationError({"error_message": "Your account is suspended."})
+        if user.is_suspended or user.is_terminated:
+            message = "terminated" if user.is_terminated else "suspended"
+            raise exceptions.ValidationError({"error_message": f"Your account is {message}."})
     
-        if user.is_terminated:
-            raise exceptions.ValidationError({"error_message": "Your account is terminated."})
-   
         
         task_applicant = serializer.save()
         task = task_applicant.task  # Assuming Task is related to TaskApplicant
