@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from user_profile.serializers import UserSerializer, UserReportSerializer
 from user_profile.models import UserProfile, UserReport
+from rest_framework.validators import UniqueTogetherValidator
 
 from .models import TaskApplicant, TaskCategory, Task, TaskReview
 
@@ -103,7 +104,23 @@ class CreateTaskApplicantSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskApplicant
         fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=TaskApplicant.objects.all(),
+                fields=['task', 'performer'],  # Ensure this matches the unique constraint in the model
+                message="You have already applied for this task."
+            )
+        ]
+    
+    def validate(self, attrs):
+        user_profile = self.context['request'].user.profile  # Get the user's profile from the request
+        task = attrs.get('task')
 
+        # Manually check if the combination of task and user_profile already exists
+        if TaskApplicant.objects.filter(task=task, user_profile=user_profile).exists():
+            raise serializers.ValidationError({"error_message": "You have already applied for this task."})
+
+        return attrs
 
 class TaskListApplicantSerializer(serializers.ModelSerializer):
     task = TaskSerializer(read_only=True)

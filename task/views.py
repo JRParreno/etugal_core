@@ -220,6 +220,19 @@ class TaskApplicantCreateView(generics.CreateAPIView):
             message = "terminated" if user.is_terminated else "suspended"
             raise exceptions.ValidationError({"error_message": f"Your account is {message}."})
     
+        # Get the taskId from the request data
+        task_id = self.request.data.get('task')
+
+        # Fetch the Task instance
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            raise exceptions.ValidationError({"error_message": "Task not found."})
+
+        # Check if the user has already applied for this task
+        if TaskApplicant.objects.filter(task=task, performer=user).exists():
+            raise exceptions.ValidationError({"error_message": "You have already applied for this task."})
+
         
         task_applicant = serializer.save()
         task = task_applicant.task  # Assuming Task is related to TaskApplicant
