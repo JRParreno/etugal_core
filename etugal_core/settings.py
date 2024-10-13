@@ -31,7 +31,10 @@ ALLOWED_HOSTS = ['*']
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://etugal-core.onrender.com',  # Use https
+]
 
 # Application definition
 
@@ -90,9 +93,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'etugal_core.wsgi.application'
-
-CORS_ORIGIN_ALLOW_ALL = True
 
 ASGI_APPLICATION = 'etugal_core.asgi.application'
 
@@ -327,6 +327,9 @@ JAZZMIN_SETTINGS = {
         "success": "btn-success"
     }
 }
+
+WSGI_APPLICATION = 'etugal_core.wsgi.application'
+
 
 
 # Database
