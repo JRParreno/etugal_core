@@ -213,6 +213,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         user.last_name = user_details['last_name']
         user.username = user_details['email']
         user.save()
+        birthdate = datetime.strptime(user_details['birthdate'], "%m/%d/%Y")
+
+        user_profile.birthdate = birthdate
+        user_profile.address = user_details['address']
+        user_profile.contact_number = user_details['contact_number']
+        user_profile.gender = user_details['gender']
 
         user_profile.save()
 
@@ -313,24 +319,28 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
             relative_link = reverse(
                 'api:password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
 
-            current_site = get_current_site(
-                request=request).domain
-            abs_url: str = f"https://{current_site}{relative_link}"
+            current_site = get_current_site(request=request).domain
+            abs_url = f"https://{current_site}{relative_link}"
 
             context_email = {
                 "url": abs_url,
                 "full_name": f"{identity.first_name} {identity.last_name}"
             }
-            message = get_template(
-                'forgot_password/index.html').render(context_email)
 
-            context = {
-                'email_body': message,
-                'to_email': identity.email,
-                'email_subject': 'Reset your password'
-            }
+            # Render the HTML email content
+            html_message = get_template('forgot_password/index.html').render(context_email)
 
-            Util.send_email(context)
+            # Fallback to a plain text message (optional)
+            plain_message = f"Hi {identity.first_name},\nUse the link below to reset your password:\n{abs_url}"
+
+            # Use the HTML email function for sending both plain text and HTML
+            Util.send_html_email_with_certifi(
+                subject='Reset Your E-Tugal Password',
+                plain_message=plain_message,  # Fallback plain text email
+                html_message=html_message,  # HTML email content
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[identity.email]
+            )
         else:
             return response.Response({'error_message': 'Email not found!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -338,7 +348,6 @@ class RequestPasswordResetEmail(generics.CreateAPIView):
             {'success': 'We have sent you a link to reset your password'},
             status=status.HTTP_200_OK
         )
-
 
 class UserReportCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
