@@ -24,6 +24,16 @@ class TaskProfileSerializer(serializers.ModelSerializer):
         report = UserReport.objects.filter(reported_user=obj.user).exclude(status='Resolved').first()  # Assuming 'reporter' is a ForeignKey to the user in UserReport
         return UserReportSerializer(report).data if report else None
 
+    def __init__(self, *args, **kwargs):
+        # init context and request
+        context = kwargs.get('context', {})
+        self.request = context.get('request', None)
+        super(TaskProfileSerializer, self).__init__(*args, **kwargs)
+
+    def get_profile_photo(self, data):
+        request = self.context.get('request')
+        photo_url = data.profile_photo.url
+        return request.build_absolute_uri(photo_url)
 
 class TaskListSerializers(serializers.ModelSerializer):
     task_category = TaskCategorySerializers()

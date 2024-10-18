@@ -9,6 +9,8 @@ from chat.serializers import ChatSessionSerializers, ChatMessageSerializers
 from core.paginate import ExtraSmallResultsSetPagination
 from user_profile.serializers import UserSerializer
 from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
 
 
 def chatPage(request, *args, **kwargs):
@@ -159,3 +161,6 @@ class ChatMessageRetrieveView(generics.RetrieveAPIView):
             return response.Response(serializer.data, status=status.HTTP_200_OK)
 
         return response.Response({"error_message": "Not found"}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+

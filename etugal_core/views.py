@@ -6,7 +6,16 @@ from oauth2_provider.models import get_access_token_model
 from oauth2_provider.signals import app_authorized
 from oauth2_provider.views.base import TokenView
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import render
 
+
+def privacy_policy(request):
+    
+    return render(request, 'privacy_policy.html')
+
+def terms_condition(request):
+    
+    return render(request, 'terms_condition.html')
 
 class TokenViewWithUserId(TokenView):
     @method_decorator(sensitive_post_parameters("password"))
