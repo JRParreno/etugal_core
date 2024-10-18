@@ -127,7 +127,7 @@ class CreateTaskApplicantSerializer(serializers.ModelSerializer):
         task = attrs.get('task')
 
         # Manually check if the combination of task and user_profile already exists
-        if TaskApplicant.objects.filter(task=task, user_profile=user_profile).exists():
+        if TaskApplicant.objects.filter(task=task, performer=user_profile).exists():
             raise serializers.ValidationError({"error_message": "You have already applied for this task."})
 
         return attrs
