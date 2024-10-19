@@ -17,6 +17,10 @@ def terms_condition(request):
     
     return render(request, 'terms_condition.html')
 
+def safety_guide(request):
+    
+    return render(request, 'safety_guide.html')
+
 class TokenViewWithUserId(TokenView):
     @method_decorator(sensitive_post_parameters("password"))
     def post(self, request, *args, **kwargs):

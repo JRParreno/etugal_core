@@ -11,7 +11,7 @@ from django.conf import settings
 from django.views.generic import RedirectView
 from fcm_django.api.rest_framework import FCMDeviceAuthorizedViewSet
 from chat.views import chatPage
-from .views import TokenViewWithUserId, privacy_policy, terms_condition
+from .views import TokenViewWithUserId, privacy_policy, terms_condition, safety_guide
 
 
 
@@ -42,7 +42,8 @@ urlpatterns = [
     path('api/', include('api.urls', namespace='api')),
     path('privacy_policy/', privacy_policy, name='privacy_policy'),
     path('terms_condition/', terms_condition, name='terms_condtion'),
-    path('password-reset-complete/',
+    path('safety_guide/', safety_guide, name='safety_guide'),
+    path('-reset-complete/',
          auth_views.PasswordResetCompleteView.as_view(
              template_name='password_reset_complete.html'),
          name='password_reset_complete'),

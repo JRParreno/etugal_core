@@ -170,38 +170,52 @@ class PerformerTaskViewSet(viewsets.ModelViewSet):
 class TaskReviewListView(generics.ListAPIView):
     serializer_class = TaskReviewSerializers
     permission_classes = [permissions.IsAuthenticated]
-    queryset = TaskReview.objects.filter(task__status=Task.COMPLETED).order_by('-created_at')
     pagination_class = ExtraSmallResultsSetPagination
 
     def get_queryset(self):
+        # Get query params for performer, provider, and my_reviews
         performer_id = self.request.query_params.get('performer', None)
         provider_id = self.request.query_params.get('provider', None)
+        my_reviews = self.request.query_params.get('my_reviews', None)
 
-        if performer_id:
-            return TaskReview.objects.filter(task__performer__id=performer_id, performer_rate__gt=0)
+        # Base queryset for completed tasks
+        queryset = TaskReview.objects.filter(task__status=Task.COMPLETED).order_by('-created_at')
+
+        # If 'my_reviews' is provided, filter by current user as performer or provider
+        if my_reviews is not None:
+            user = self.request.user.profile
+            queryset = queryset.filter(
+                Q(task__performer=user, performer_rate__gt=0) |
+                Q(task__provider=user, provider_rate__gt=0)
+            )
+        # Apply filtering based on performer or provider if provided
+        elif performer_id:
+            queryset = queryset.filter(task__performer__id=performer_id, performer_rate__gt=0)
         elif provider_id:
-            return TaskReview.objects.filter(task__provider__id=provider_id, provider_rate__gt=0)
-        else:
-            return None
+            queryset = queryset.filter(task__provider__id=provider_id, provider_rate__gt=0)
+
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        if queryset is None:
+        # If neither performer, provider, nor my_reviews is provided, return a 400 error
+        if not self.request.query_params.get('performer') and not self.request.query_params.get('provider') and not self.request.query_params.get('my_reviews'):
             return response.Response(
-                {"error_message": "Please provide either a performer or provider ID."},
+                {"error_message": "Please provide either a performer, provider, or set 'my_reviews'."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Apply pagination
+        # Apply pagination if necessary
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        # If pagination is not applied, return a normal response
+        # Return normal response if pagination is not applied
         serializer = self.get_serializer(queryset, many=True)
         return response.Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 
