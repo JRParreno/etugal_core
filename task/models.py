@@ -46,6 +46,7 @@ class Task(BaseModel, GeoItem):
     task_category = models.ForeignKey(TaskCategory, on_delete=models.CASCADE)
     provider = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='task_provider')
     performer = models.ForeignKey(UserProfile, null=True, blank=True, on_delete=models.CASCADE, related_name='task_performer')
+    num_worker = models.IntegerField(default=1)
     description = models.TextField()
     work_type = models.CharField(
         max_length=10, choices=WORK_TYPE, default=ONLINE, verbose_name="Work Type")
@@ -93,6 +94,8 @@ class Task(BaseModel, GeoItem):
         # Ensure that is_done_perform is True before marking the task as completed
         if self.status == self.COMPLETED and not self.is_done_perform:
             raise ValidationError("The task cannot be marked as completed unless 'is_done_perform' is True.")
+        if self.num_worker <= 0:
+            raise ValidationError("Number of workers cannot be zero or negative.")
     
     def save(self, *args, **kwargs):
         # Call the clean method to perform validation

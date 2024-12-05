@@ -96,7 +96,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'id', 'title', 'task_category_id', 'task_category', 'reward', 'done_date', 'schedule_time', 
             'description', 'work_type', 'longitude', 'latitude', 'address', 'provider',
             'performer', 'created_at', 'updated_at', 'status', 'rejection_reason', 'task_applicants', 'done_date',
-            'schedule_time', 'is_done_perform', 'review',
+            'schedule_time', 'is_done_perform', 'review', 'num_worker'
         ]
         
         extra_kwargs = {
