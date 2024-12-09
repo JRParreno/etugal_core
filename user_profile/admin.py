@@ -9,15 +9,59 @@ class ReportImageInline(admin.TabularInline):
     model = ReportImage
     extra = 1  # Number of extra empty image fields
 
+from django.contrib import admin
+from .models import UserProfile
+
+from django.contrib import admin
+from .models import UserProfile
+
+from django.contrib import admin
+from django import forms
+from .models import UserProfile
+from django.utils.translation import gettext_lazy as _
+
+class CustomVerificationStatusListFilter(admin.SimpleListFilter):
+    # The title to be displayed in the filter sidebar
+    title = _('Verification Status')  # You can customize this title
+
+    # Parameter for the filter, which is what you will use in the query parameters
+    parameter_name = 'verification_status'
+
+    def lookups(self, request, model_admin):
+        # Custom labels for the filter options
+        return (
+            (UserProfile.VERIFIED, _('Verified')),
+            (UserProfile.PROCESSING_APPLICATION, _('Processing Application')),
+            (UserProfile.UNVERIFIED, _('Unverified')),
+            (UserProfile.REJECTED, _('Disapproved')),  # Changed REJECTED to Disapproved here
+        )
+
+    def queryset(self, request, queryset):
+        # Filter the queryset based on the selected value
+        if self.value():
+            return queryset.filter(verification_status=self.value())
+        return queryset
+
 @admin.register(UserProfile)
 class UserProfileAdminView(admin.ModelAdmin):
-    list_display = ('id', 'user', 'verification_status', 'is_suspended', 'is_terminated', 'suspended_until')
+    # Custom method to change 'REJECTED' to 'DISAPPROVED' in the admin list view
+    def get_verification_status_display_admin(self, obj):
+        if obj.verification_status == UserProfile.REJECTED:
+            return 'DISAPPROVED'  # Change display of REJECTED to DISAPPROVED
+        return obj.get_verification_status_display()  # Default display method for other statuses
+
+    get_verification_status_display_admin.short_description = 'Verification Status'  # Column name
+
+    # Customize list display to use the custom method
+    list_display = ('id', 'user', 'get_verification_status_display_admin', 'is_suspended', 'is_terminated', 'suspended_until')
+    
     ordering = ('user',)
     search_fields = ('user__first_name', 'user__last_name',)
-    list_filter = ('verification_status', 'is_suspended', 'is_terminated')
+    list_filter = (CustomVerificationStatusListFilter, 'is_suspended', 'is_terminated')
     
     actions = ['suspend_1_day', 'suspend_3_days', 'suspend_1_week', 'suspend_1_month', 'terminate_user']
 
+    # Action methods for suspending and terminating users
     def suspend_1_day(self, request, queryset):
         for profile in queryset:
             profile.suspend(reason="Admin Suspension", duration_key='1_day')
@@ -42,7 +86,8 @@ class UserProfileAdminView(admin.ModelAdmin):
         for profile in queryset:
             profile.terminate(reason="Admin Termination")
     terminate_user.short_description = 'Terminate selected users'
-    
+
+    # Override save_model to send email when the verification status changes
     def save_model(self, request, obj, form, change):
         prev_profile = UserProfile.objects.get(pk=obj.pk)
         if obj.verification_status == UserProfile.VERIFIED and not prev_profile.verification_status == UserProfile.VERIFIED: 
@@ -61,9 +106,19 @@ class UserProfileAdminView(admin.ModelAdmin):
                 message=message,
                 recipient_list=[obj.user.email],
             )
-           
-        super(UserProfileAdminView, self).save_model(
-            request, obj, form, change)
+        super(UserProfileAdminView, self).save_model(request, obj, form, change)
+
+    # Customize the form field for verification_status in the admin form
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "verification_status":
+            choices = list(UserProfile.VERIFICATION_CHOICES)
+            # Replace 'REJECTED' with 'DISAPPROVED' in the form choices
+            for i, choice in enumerate(choices):
+                if choice[0] == UserProfile.REJECTED:
+                    choices[i] = (UserProfile.REJECTED, 'DISAPPROVED')
+            kwargs['choices'] = choices
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
         
     
 @admin.register(UserReport)
